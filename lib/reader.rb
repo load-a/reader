@@ -138,7 +138,3 @@ module Reader
   end #end class OutText
 end
 
-step = Reader::InDir.new("dice/lib", "rb", true)
-puts step.list
-puts step.file("dice.rb").text
-step.files[0].write("../NEW_DICE.RB")
