@@ -85,17 +85,12 @@ module Reader
       @path         = path
       @extension    = ext
       @extension = "" if ext == "*"
-      @text         = []
-      @original     = []
+      @original     = File.open(@path).readlines
+      @text         = @original
       @comment_char = "//"
       @join_char    = ""
       @auto_set     = true #this will automatically change the join_char if certain methods are used
       _read
-    end
-
-    def _read
-      @original = File.open(@path).readlines
-      reset
     end
 
     def write (path = "#{@path}.#{@extension}")
