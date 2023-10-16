@@ -79,33 +79,34 @@ Reader::Definition.new("PATH").show_info # => will print a list of information t
 ### Albums
 The `Album` class is an optional feature implemented in case the user wanted a built-in way to manage multiple Chapter objects. It is a container for Chapters in the same way Chapters are containers for Pages. They can be added to or removed from the Album as the user desires. It can be initialized with existing Chapters, but this is optional. A `name` is the only required parameter.
 
+
 ### Classes and Methods
 
-#### Page
+#### Page Class
 **Attributes:**
-*(Read Only)*
+_(Read Only)_
 - name
-    >> The filename without the extension
+> The filename without the extension
 - full_name
-    >> The filename with the extension
+> The filename with the extension
 - path
 - extension
 - write_protection 
-    >> The `write` method writes to its own `path` by default. `write_protection` is set to _false_ so that it doesn't overwrite the existing file. Can be permanently toggeled through `change_ protections`, or temporarily by passing `force_overwrite: true` into the `write` call.
+> The `write` method writes to its own `path` by default. `write_protection` is set to _false_ so that it doesn't overwrite the existing file. Can be permanently toggeled through `change_ protections`, or temporarily by passing `force_overwrite: true` into the `write` call.
 - size
-    >> The original filesize, in bytes.
+> The original filesize, in bytes.
 - original
-    >> the original read
-*(Accessable)*
+> the original read
+_(Accessable)_
 - text
-    >> The edited text.
-*(Accessible via Method Call)*
+> The edited text.
+_(Accessible via Method Call)_
 - edited?
-    >> Returns _true_ or _false_ based on whether the `text` has been edited.
+> Returns _true_ or _false_ based on whether the `text` has been edited.
 
 **Methods**
 - info
-    >> Formatted text containing basic Page info.
+> Formatted text containing basic Page info.
 - write(PATH\*, FORCE_OVERWRITE\*)
 - reset
 - change_protection(CHANGE_TO\*)
@@ -115,15 +116,16 @@ The `Album` class is an optional feature implemented in case the user wanted a b
 - split_punct
 - split_char
 
-#### Chapter
+
+#### Chapter Class
 **Attributes**
-*(Read Only)*
+_(Read Only)_
 - name
 - path
 - extensions
-    >> A list of currently recognized extensions.
+> A list of currently recognized extensions.
 - pages
-    >> The list of page objects.
+> The list of page objects.
 
 **Methods**
 - add(FILENAME-OR-PAGE_OBJECT)
@@ -132,22 +134,24 @@ The `Album` class is an optional feature implemented in case the user wanted a b
 - show_full_directory
 - show_list
 - file(FILENAME)
-    >> Use this to call a file by name, rather than index.
+> Use this to call a file by name, rather than index.
+
 
 #### Album
 **Attributes**
-*(Read Only)*
+_(Read Only)_
 - name
-*(Accessible via Method Call)*
+_(Accessible via Method Call)_
 - chapters
 
 **Methods**
 - add(CHAPTER_OBJECT)
 - remove(CHAPTER.NAME)
 
+
 #### Definition
 **Attributes**
-*(Read Only)*
+_(Read Only)_
 - path
 - full_name
 - directory
@@ -159,9 +163,11 @@ The `Album` class is an optional feature implemented in case the user wanted a b
 - show_directory_info
 - show_file_info
 - show_info
-    >> Shows all available info for the given path. This should be the default info method.
+> Shows all available info for the given path. This should be the default info method.
 
 \* All "show" methods print automatically
+
+
 
 ## Development
 
