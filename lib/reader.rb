@@ -5,19 +5,20 @@ require_relative "reader/version"
 
 module Reader
 	class Error < StandardError
-
 		class BadInitialization < Error; end
+		class NoEnt < Error; end
+		class WrongArgumentType < Error; end
 	end  
 
 	#________________________________________
 	# - Methods - 
-	class Verifier # holds various information about a path
+	class Definition # holds various information about a path
 		
-		attr_reader	:path, :full_name, :pwd, :base_name, :dir_name, :extension, :type
+		attr_reader	:path, :full_name, :directory, :extension, :type
 
 		def initialize (path)
-			raise Reader::Error::BadInitialization.new("PathFinder class initialized with wrong type of argument [#{path.class}]. ") if path.class != String
-			raise Reader::Error::BadInitialization.new("PathFinder class initialized with empty string.") if path.empty?
+			raise Reader::Error::BadInitialization.new("Definition class initialized with wrong type of argument [#{path.class}]. ") if path.class != String
+			raise Reader::Error::BadInitialization.new("Definition class initialized with empty string.") if path.empty?
 
 			@path = path.strip
 
@@ -35,15 +36,11 @@ module Reader
 			@border = ("__" * 40)
 		end	
 
-		def self.pwd
-			Dir.pwd
-		end
-
-		def border
+		def _border
 			puts @border
 		end
 
-		def header
+		def show_header
 			[
 				"#{" " * 34} Verifying",																												# centers title
 				"#{@path.length < 80 ? "#{" " * ((80 - @path.length)/2)}#{@path}" : @path}",		# centers path title unless path is > 80
@@ -53,7 +50,7 @@ module Reader
 			].each { |e| puts e }
 		end
 
-		def general_info
+		def show_general_info
 			[ #header and general info
 				"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -General Information", 
 				"  Base Name: 		\"#{ _handle_spacing(@name, 56, 51) }\"",
@@ -62,15 +59,15 @@ module Reader
 				"  Status: 		#{@type.upcase}", 
 				"  Searching for:   	(#{@is_absolute ? "Absolute" : "Relative"})",
 				"  #{@absolute_path}"
-			].each { |e| puts e }
-	1	end
+			].each { |e| puts e }	
+		end
 
 		def _handle_spacing (object, max, scope)
 			scope = -scope if scope > 0
 			"#{ object.length > max ? "...#{object[scope..]}" : object}"
 		end
 
-		def directory_info
+		def show_directory_info
 			Dir.chdir(@full_name) {
 				puts "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -Directory Information"
 				puts "  Children:"
@@ -78,7 +75,7 @@ module Reader
 			}
 		end
 
-		def file_info
+		def show_file_info
 			# puts File.dirname(expanded)
 			Dir.chdir(@directory) {
 				[
@@ -92,7 +89,7 @@ module Reader
 			}
 		end
 
-		def warning
+		def _warning
 			[
 				"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
 				"* WARNING: `~` will not be expanded in some File or Dir class methods.   	*",
@@ -101,107 +98,35 @@ module Reader
 		end
 
 		def show_info
-			border
-			header
-			general_info
-			directory_info if File.directory?(@full_name)
-			file_info if @type == "file"
-			warning if path.start_with?("~")
-			border
+			_border
+			show_header
+			show_general_info
+			show_directory_info if File.directory?(@full_name)
+			show_file_info if @type == "file"
+			_warning if path.start_with?("~")
+			_border
 		end
-
-
 	end #end class PathFinder
 	
-	
-
-	def self.verify_path (path)
-		# Brief: This method takes a path (string) as input and prints diagnostic information about it
-		#         Use this to get insight as to what the computer sees when your path is sent through 
-		#         various File and Dir methods
-		# Note: Absolute paths start with `/` and this method handles them
-		path.strip!
-		return puts "** ERROR in method `verify_path`: No path to verify.			**" if path == ""
-		return puts "** ERROR in method `verify_path`: wrong argument type. [#{path.class} != String] **" if path.class != String
-		#_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-		# * Initial Variables [don't use during chdir] * 
-		expanded      = File.expand_path(path)
-		pwd           = Dir.pwd
-		base_name     = File.basename(path)
-		dir_name      = File.dirname(path)
-		ext           = File.extname(path)
-		is_dir        = File.directory?(path)
-		is_file       = File.file?(path)
-		#_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-		# * Printing and Logic * 
-		puts ("__" * 40)
-		[ #header and general info
-			"#{" " * 34} Verifying",                                                                  # centers title
-			"#{path.length < 80 ? "#{" " * ((80 - path.length)/2)}#{path}" : path}",                  # centers path title unless path is > 80
-			"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ", 
-			"  Working Directory is: #{ pwd.length > 56 ? "...#{pwd[-52..]}" : pwd} ",                # shows the last 52 characters if greater than 56
-			"  Expanded `path` is: 	#{ expanded.length > 56 ? "...#{expanded[-52..]}" : expanded} ",
-			"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -General Information", 
-			"  Base Name: 		\"#{ base_name.length > 56 ? "...#{base_name[-51..]}" : base_name}\"",
-			"  Directory Name: 	\"#{ dir_name.length > 56 ? "...#{dir_name[-51..]}" : dir_name}\"",  
-			"  Extension Name: 	\"#{ext}\"", 
-			"  Status: 		#{if is_dir then "DIRECTORY" elsif is_file then "FILE" else "NOT FOUND" end}", 
-			"  Searching for:   	(#{File.absolute_path?(path) ? "Absolute" : "Relative"})",
-			"  #{File.absolute_path(path)}"
-		].each { |e| puts e }
-
-		# If path is directory, list relevant info
-		if File.directory?(expanded)
-			Dir.chdir(expanded) {
-				puts "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -Directory Information"
-				puts "  Children:"
-				Dir.children(Dir.pwd).sort.each_with_index { |c, i| if File.owned?(c) then puts "    #{i}.	#{c}" else puts "    #{i}.	-NOT OWNED-" end } 
-				}
-			end
-
-		# If path is file list relevant info
-		if File.file?(expanded)
-			# puts File.dirname(expanded)
-			Dir.chdir(File.dirname(expanded)) {
-				[
-					"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - File Information",
-					"  Owned by current user?:  	#{File.owned?(base_name)}",
-					"  Readable?:       		#{File.readable?(base_name)}",
-					"  Writable?:       		#{File.writable?(base_name)}",
-					"  Executable?:       		#{File.executable?(base_name)}",
-					"  Size (bytes):    		#{File.size?(base_name)}",
-				].each { |e| puts e }
-			}
-		end
-
-
-		if path.start_with?("~")
-			[
-				"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
-				"* WARNING: `~` will not be expanded in some File or Dir class methods.   	*",
-				"*      	   Use `File.expand_path(PATH)` to expand this path manually.	    	*",
-			].each { |e| puts e }
-		end
-		puts ("__" * 40)
-	end #end verify_path
-
-	#________________________________________
-	# - Classes - 
-	class Import # the actual text files
+		class Page # the actual text files
 		# example call: 
-		# iroha = Reader::Import.new("../test_file.txt")
-		attr_reader   :original, :path, :ext, :name, :write_protection, :path, :size
-		attr_accessor :text, :base_name, :full_name
+		# iroha = Reader::Page.new("../test_file.txt")
+		attr_reader   :original, :path, :extension, :name, :write_protection, :size, :full_name, 
+		attr_accessor :text
+
+		def self.attributes()
+			[:original, :path, :extension, :name, :write_protection, :path, :size, :text, :full_name]
+		end
 
 		def initialize (path) 
 			# Note: This object assumes a relative path from the current working directory
-			#    - This will be sorted out in Folder class
+			#    - This will be sorted out in Chapter class
 			path.strip!
 			@name 					= File.basename(path, ".*")
 			@full_name      = File.basename(path) 
 			@path  					= File.expand_path(path)
-			@dir_name       = File.dirname(path)
-			@ext            = File.extname(path)
+			@directory      = File.dirname(path)
+			@extension      = File.extname(path)
 
 			@comment_char = "//"
 			@join_char 		= "" 		# the character used to join the text together if it was broken up
@@ -213,7 +138,7 @@ module Reader
 			@write_protection = true  # protects the real file from being overwritten
 		end
 
-		def convert_size (size)
+		def _convert_size (size)
 			return "#{(size * 8).to_i} bits" if size < 1.125
 			return "#{(size /= 1000000000000000.0).round(2)} pb" if size >= 1000000000000000
 			return "#{(size /= 1000000000000.0).round(2)} tb" if size >= 1000000000000
@@ -227,16 +152,16 @@ module Reader
 		# - Informantion - 
 		def info (small = false)
 			# Note: NAME  SIZE   DIR  EDITED?
-			#   - format this further in Folder (including which entity calls `puts`)
-			# 	- `small` is to accomodate list indexing (see Folder.list)
+			#   - format this further in Chapter (including which entity calls `puts`)
+			# 	- `small` is to accomodate list indexing (see Chapter.list)
 			name_len 	= 17
 			size_len 	= 9
 			dir_len 	= small ? 30 : 38
 			dir_off		= small ? -25 : 33
 
 			base_str 	= "| #{ @full_name.length > name_len ? "...#{@full_name[-13..]}" : @full_name }"
-			size_str 	= convert_size(@size)
-			dir_str 	= "#{ @dir_name.length > dir_len ? "...#{@dir_name[-25..]}" : @dir_name}"
+			size_str 	= _convert_size(@size)
+			dir_str 	= "#{ @directory.length > dir_len ? "...#{@directory[-25..]}" : @directory}"
 
 			base_str + (" " * (name_len - base_str.length)) + 
 			" | " + 
@@ -298,45 +223,56 @@ module Reader
 			@text.flatten!
 			@join_char = "\n" if @auto_set
 		end
-	end #end class Import
+	end #end class Page
 
 	
-	class Folder # contains Import objects; default class
+	class Chapter # contains Page objects; default class
 
-		attr_reader  :name, :path, :extensions, :imports
+		attr_reader  :name, :path, :extensions, :pages
 
-		def initialize (folder_name, path, *ext)      
-			@name = folder_name
+		def initialize (chapter_name, path, *extension)      
+			@name = chapter_name
 			@path = File.expand_path(path)
-			@extensions = ext
-			@imports = [] #the actual objects
-			@table = []
+			@extensions = extension; @extension = @extensions;
+			@pages = [] #the actual objects
 
 			Dir.each_child(@path) { |c| add(c) if @extensions.any? { |e| File.extname(c) == e || (File.file?(c) && e == ".*")} } 
 			
 		end
 
 		def add (filename)
-			addition = "#{@path}/#{filename}"
-			return "** Error in folder `#{@name}#add(#{filename})`: Invalid filename **" if !File.exist?(addition)
-			@imports << Reader::Import.new(addition)
-			@table << filename
-			@extensions << File.extname(addition) if !@extensions.include?(File.extname(addition))
+			if filename.class == String
+				addition = "#{@path}/#{filename}"
+				return "** Error in chapter `#{@name}#add(#{filename})`: Invalid filename **" if !File.exist?(addition)
+				@pages << Reader::Page.new(addition)
+				@extensions << File.extname(addition) if !@extensions.include?(File.extname(addition))
+			elsif filename.class == Reader::Page
+				@pages << filename
+				@extensions << filename.extension
+			else
+				raise Reader::Error::WrongArgumentType.new("#{@name}.add() - Invalid parameter type. [#{filename.class}]")
+			end
+		end
+
+		def remove (page)
+			@pages.reject! { |f| f.name == page}
 		end
 
 		def method_missing (m, *args, &block)
-			@imports.detect { |file| file.name == "#{m}" } || "Error: no #{m} Import in #{@name} Folder"
+			res = (@pages.detect { |file| file.name.downcase == "#{m}" }) 
+			raise Reader::Error::NoEnt.new("Error: no #{m} Page in #{@name} Chapter") if res.nil?
+			res
 		end
 
 		def info 
 			# Note: NAME  SIZE   DIR  EDITED?
-			#   - format this further in Folder (including which entity calls `puts`)
+			#   - format this further in Chapter (including which entity calls `puts`)
 			name_len 	= 17
 			size_len 	= 9
 			dir_len 	= 38
 
 			name_str 	= " #{ @name.length > name_len ? "...#{@name[-13..]}" : @name }"
-			size_str 	= @imports.length.to_s
+			size_str 	= @pages.length.to_s
 			dir_str 	= "#{ @path.length > dir_len ? "...#{@path[-35..]}" : @path}"
 
 			name_str + (" " * (name_len - name_str.length)) + 
@@ -346,76 +282,95 @@ module Reader
 			dir_str #+ (" " * (dir_len - dir_str.length)) <- commented out for now
 		end
 
-		def full_directory
+		def show_full_directory
 			Dir.children(@path).each_with_index { |e, i|
 					puts "#{i}.	#{e}"
 				}
 		end
 
-		def list
-			@imports.each_with_index { |e, i|
+		def show_list
+			@pages.each_with_index { |e, i|
 					puts "#{i}.	#{e.info(true)}"
 				}
 		end
 
 		def file (filename)
-			@imports.detect { |file| file.full_name == "#{filename}" }
+			@pages.detect { |file| file.full_name == "#{filename}" }
+		end
+
+		def __show(attribute = :name)
+			# Note: THIS METHOD DOES NOT WORK
+			# 	- The double underscore is to hopefully prevent accidental uses and will be removed if I can ever get this to work.
+			#		- I cannot figure out why calling e.attribute throws an error. 
+			
+			raise Reader::Error::WrongArgumentType.new("Error in #{@name}.show(#{attribute}): invlaid attribute type [#{attribute.class}].") if attribute.class != String
+			attribute = attribute.to_sym
+			raise Reader::Error::WrongArgumentType.new("Error in #{@name}.show(#{attribute}): invlaid attribute.") if !Reader::Page.attributes.include?(attribute)
+
+			@pages.each_with_index { |e, i|
+					"#{i}.	#{e.attribute}"
+				}
 		end
 		
-	end #end class Folder
+	end #end class Chapter
 
 	
-	class Collection # contains Folder object; is available for convenience but is not necessary
+	class Album # contains Chapter object; is available for convenience but is not necessary
 
-		attr_accessor  :all
+		attr_reader  :name
 
-		def initialize (name) 
-			@all = []
-			@paths = path
-			@exts = ext
+		def initialize (name, *chapters) 
+			raise Reader::Error::BadInitialization.new("Album initialized with invalid parameter. [#{chapters.find { |c| c.class != Reader::Chapter}.class }]") if chapters.any? { |f| f.class != Reader::Chapter}
 
-			add(path, ext) if path != "" && ext != ""
+			@exts = []
+			@name = name
+			@chapters = []
+
+			chapters.each { |e|
+					@chapters << e
+				}
 		end
 
-		def add (folder, ext)
+		def add (chapter)
+			raise Reader::Error::WrongArgumentType.new("#{@name}.add() - Invalid parameter type. [#{chapter.class}]") if chapter.class != Reader::Chapter
+			@chapters << chapter
 		end
 
-		def remove (folder)
+		def chapters
+			puts "Chapters in #{@name} Album"
+			@chapters.each_with_index { |e, i|
+					puts "#{i}.	#{e.name}"
+				}
 		end
 
-		def _update
+		def remove (chapter)
+			@chapters.reject! { |f| f.name == chapter}
 		end
 
-		def list
-			"Folders in #{@name} collection:"
+		def method_missing (m, *args, &block)
+			res = (@chapters.detect { |file| file.name.downcase == "#{m}" }) 
+			raise Reader::Error::NoEnt.new("Error: no #{m} Chapter in #{@name} Binder") if res.nil?
+			res
 		end
-	end #end class Collection
+
+	end #end class Album
 
 end
 
 #________________________________________
 # - TESTING - 
-path = +"~/reader"
-Reader.verify_path(path)
-# g = Reader::Folder.new("test_folder", ".", ".rb")
+path = +"../test_file.txt"
+# g = Reader::Chapter.new("test_chapter", ".", ".rb")
 # puts g.extensions.to_s
 # puts g.info
 # g.list
 # puts g.iroha.info
 
-ver = Reader::Verifier.new(path)
+pg = Reader::Page.new(path)
 
-ver.show_info
+fld = Reader::Chapter.new("Binder", ".", ".rb")
+fld.add(pg)
 
-# def assign_val (val)
-# 	raise Reader::Error::WrongValueError.new("LKJLKJ") if val > 4
-# 	puts val
-# end
+col = Reader::Album.new("Cabinet")
 
-# begin
-# 	assign_val(5)
-# rescue Reader::Error::WrongValueError => e
-# 	puts e
-# 	puts $@
-# end
-#### Dir.each_child(path) { |child| code } 0725
+Reader::Definition.new("..").show_info
