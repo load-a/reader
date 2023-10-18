@@ -111,7 +111,7 @@ module Reader
 		class Page # the actual text files
 		# example call: 
 		# iroha = Reader::Page.new("../test_file.txt")
-		attr_reader   :original, :path, :extension, :name, :write_protection, :size, :full_name, 
+		attr_reader   :original, :path, :extension, :name, :write_protection, :size, :full_name
 		attr_accessor :text
 
 		def self.attributes()
@@ -356,21 +356,3 @@ module Reader
 	end #end class Album
 
 end
-
-#________________________________________
-# - TESTING - 
-path = +"../test_file.txt"
-# g = Reader::Chapter.new("test_chapter", ".", ".rb")
-# puts g.extensions.to_s
-# puts g.info
-# g.list
-# puts g.iroha.info
-
-pg = Reader::Page.new(path)
-
-fld = Reader::Chapter.new("Binder", ".", ".rb")
-fld.add(pg)
-
-col = Reader::Album.new("Cabinet")
-
-Reader::Definition.new("..").show_info
